@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+        }
+        button {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Dashboard</h1>
+
+        <!-- Login Form -->
+        <div class="section" id="login-section">
+            <h3>Admin Login</h3>
+            <input id="username" type="text" placeholder="Username">
+            <input id="password" type="password" placeholder="Password">
+            <button onclick="login()">Login</button>
+        </div>
+
+        <!-- User Management Section -->
+        <div class="section" id="user-management" style="display: none;">
+            <h3>User Management</h3>
+            <button onclick="viewUsers()">View Users</button>
+            <ul id="user-list"></ul>
+            <h4>Add User</h4>
+            <input id="new-username" placeholder="New Username">
+            <input id="new-password" type="password" placeholder="Password">
+            <button onclick="addUser()">Add User</button>
+        </div>
+
+        <!-- Stream Management Section -->
+        <div class="section" id="stream-management" style="display: none;">
+            <h3>Stream Management</h3>
+            <button onclick="viewActiveStreams()">View Active Streams</button>
+            <ul id="stream-list"></ul>
+            <h4>Stop Stream</h4>
+            <input id="stream-id" placeholder="Stream ID">
+            <button onclick="stopStream()">Stop Stream</button>
+        </div>
+    </div>
+
+    <script>
+        let token = '';
+
+        // Login Function
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const response = await fetch('http://<RaspberryPi-IP>:5000/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const result = await response.json();
+            if (result.token) {
+                token = result.token;
+                alert('Login successful!');
+                document.getElementById('login-section').style.display = 'none';
+                document.getElementById('user-management').style.display = 'block';
+                document.getElementById('stream-management').style.display = 'block';
+            } else {
+                alert('Login failed!');
+            }
+        }
+
+        // View Users
+        async function viewUsers() {
+            const response = await fetch('http://<RaspberryPi-IP>:5000/admin/users', {
+                method: 'GET',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const users = await response.json();
+            const userList = document.getElementById('user-list');
+            userList.innerHTML = '';
+            users.forEach(user => {
+                const li = document.createElement('li');
+                li.textContent = ${user.username} (${user.role});
+                userList.appendChild(li);
+            });
+        }
+
+        // Add User
+        async function addUser() {
+            const newUsername = document.getElementById('new-username').value;
+            const newPassword = document.getElementById('new-password').value;
+            const response = await fetch('http://<RaspberryPi-IP>:5000/admin/users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ username: newUsername, password: newPassword })
+            });
+            const result = await response.json();
+            alert(result.message || result.error);
+            viewUsers();
+        }
+
+        // View Active Streams
+        async function viewActiveStreams() {
+            const response = await fetch('http://<RaspberryPi-IP>:5000/admin/streams', {
+                method: 'GET',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const streams = await response.json();
+            const streamList = document.getElementById('stream-list');
+            streamList.innerHTML = '';
+            streams.forEach(stream => {
+                const li = document.createElement('li');
+                li.textContent = ${stream.media_name} (User: ${stream.user.username});
+                streamList.appendChild(li);
+            });
+        }
+
+        // Stop Stream
+        async function stopStream() {
+            const streamId = document.getElementById('stream-id').value;
+            const response = await fetch('http://<RaspberryPi-IP>:5000/admin/streams', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ stream_id: streamId })
+            });
+            const result = await response.json();
+            alert(result.message || result.error);
+            viewActiveStreams();
+        }
+    </script>
+</body>
+</html>
