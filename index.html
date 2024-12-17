@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Raspicast Multi-User</title>
+</head>
+<body>
+    <h1>Raspicast - Multi-User Streaming</h1>
+
+    <div>
+        <h3>Login</h3>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+    </div>
+
+    <div>
+        <h3>Start Streaming</h3>
+        <input type="text" id="media_path" placeholder="Path to media file">
+        <button onclick="startStream()">Start Stream</button>
+    </div>
+
+    <script>
+        let token = "";
+
+        async function login() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+
+            const response = await fetch("http://<RaspberryPi-IP>:5000/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            });
+
+            const result = await response.json();
+            if (result.token) {
+                token = result.token;
+                alert("Login successful!");
+            } else {
+                alert("Login failed!");
+            }
+        }
+
+        async function startStream() {
+            const mediaPath = document.getElementById("media_path").value;
+            const response = await fetch("http://<RaspberryPi-IP>:5000/stream", {
+                method: "POST",
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token
+                },
+                body: JSON.stringify({ media_path: mediaPath })
+            });
+
+            const result = await response.json();
+            alert(result.message || result.error);
+        }
+    </script>
+</body>
+</html>
